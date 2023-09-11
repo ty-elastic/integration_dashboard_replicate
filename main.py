@@ -44,30 +44,6 @@ def copy_dashboards(kibana_server, user, password, admin_space_id, object_ids, v
     print(resp.content)
     return resp.content
 
-def export_dashboards(kibana_server, user, password, admin_space_id, object_ids):
-    data = {
-        "objects": [],
-        "includeReferencesDeep": True
-    }
-    for id in object_ids:
-        data['objects'].append({"type": "dashboard", "id":id})
-    URL = f"{kibana_server}/s/{admin_space_id}/api/saved_objects/_export"
-    #print(URL)
-    resp = requests.post(URL, json=data, auth=(user, password), headers={"kbn-xsrf": "reporting"})
-    #print(resp.content)
-    return resp.content
-
-def import_dashboards(kibana_server, user, password, viewer_spaces, integration_dashboards):
-    for space in viewer_spaces:
-        if space == 'default':
-            URL = f"{kibana_server}/api/saved_objects/_import"
-        else:
-            URL = f"{kibana_server}/s/{space}/api/saved_objects/_import"
-        #print(URL)
-        resp = requests.post(URL, files={"file": ("export.ndjson", integration_dashboards)}, auth=(user, password), headers={"kbn-xsrf": "reporting"}, params={'compatibilityMode': True, 'overwrite': True})   
-        #print(resp.content)
-        print(f"importing dashboards into space:{space}...{resp}")
-
 def get_viewer_space_ids(kibana_server, user, password, admin_space_id):
     URL = f"{kibana_server}/api/spaces/space"
     #print(URL)
@@ -87,8 +63,6 @@ def replicate_integration_dashboards(kibana_server, user, password, admin_space_
         viewer_space_ids = get_viewer_space_ids(kibana_server, user, password, admin_space_id)
 
     copy_dashboards(kibana_server, user, password, admin_space_id, integration_object_ids, viewer_space_ids)
-    # integration_dashboards = export_dashboards(kibana_server, user, password, admin_space_id, integration_object_ids)
-    # import_dashboards(kibana_server, user, password, viewer_space_ids, integration_dashboards)
 
 def main(argv):
     opts, args = getopt.getopt(argv,"s:u:p:a:")
@@ -107,3 +81,6 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+#example, assuming you installed integrations into the "default" space
+#python main.py -s "https://serverabc123.kb.us-central1.gcp.cloud.es.io:9243" -u "elastic" -p "XYZ123" -a "default"
